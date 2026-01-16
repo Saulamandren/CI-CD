@@ -1,4 +1,4 @@
-name: CI
+name: CI for PHP Selenium Tests
 
 on:
   push:
@@ -7,51 +7,77 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Clear Cache
-      run: |
-        sudo rm -rf /opt/hostedtoolcache/Python
-        sudo rm -rf /home/runner/.cache/pip
+    - name: 1. Checkout Code
+      uses: actions/checkout@v3
 
-    - uses: actions/checkout@v3
-
-    - name: Set up PHP
+    - name: 2. Set up PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.0'
         extensions: mysqli
 
-    - name: Set up Python
+    - name: 3. Set up Python
       uses: actions/setup-python@v3
       with:
         python-version: '3.x'
 
-    - name: Install dependencies
+    - name: 4. Install Python Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Setup Chrome
+    - name: 5. Set up Chrome Browser and Driver
       uses: browser-actions/setup-chrome@latest
 
-    - name: Start web server
+    - name: 6. Configure and Start Web Server
       run: |
+        # Buat file konfigurasi virtual host untuk Apache
+        sudo bash -c 'cat <<EOF > /etc/apache2/sites-available/quiz.conf
+        <VirtualHost *:80>
+            ServerAdmin webmaster@localhost
+            DocumentRoot /var/www/html/quiz
+            ErrorLog ${APACHE_LOG_DIR}/error.log
+            CustomLog ${APACHE_LOG_DIR}/access.log combined
+        </VirtualHost>
+        EOF'
+        
+        # Salin file proyek ke direktori web root
         sudo cp -r . /var/www/html/quiz
-        sudo service apache2 start
-        sleep 5
+        
+        # Nonaktifkan situs default dan aktifkan situs quiz
+        sudo a2dissite 000-default.conf
+        sudo a2ensite quiz.conf
+        
+        # Mulai ulang Apache agar konfigurasi baru diterapkan
+        sudo service apache2 restart
 
-    - name: Debug page
+    - name: 7. Wait for Web Server
       run: |
-        curl http://localhost/quiz/login.php
+        echo "Waiting for web server to be ready..."
+        timeout 15s bash -c 'until curl -s --fail http://localhost/login.php > /dev/null; do
+          echo -n "."; sleep 1
+        done'
+        echo "Server is up!"
 
-    - name: Run tests
+    - name: 8. Run Selenium Tests
       run: |
         pytest tests/test_auth.py
 
-    - name: Check Apache error log
+    - name: 9. Upload Screenshots on Failure
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: selenium-screenshots
+        path: tests/screenshots/
+
+    - name: 10. Show Apache Logs on Failure
       if: failure()
       run: |
+        echo "--- Apache Access Log ---"
+        sudo cat /var/log/apache2/access.log
+        echo "--- Apache Error Log ---"
         sudo cat /var/log/apache2/error.log
