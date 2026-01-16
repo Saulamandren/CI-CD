@@ -41,7 +41,13 @@ jobs:
       run: |
         sudo cp -r . /var/www/html/quiz
         sudo service apache2 start
+        sleep 5
 
     - name: Run tests
       run: |
         pytest tests/test_auth.py
+
+    - name: Check Apache error log
+      if: failure()
+      run: |
+        sudo cat /var/log/apache2/error.log
