@@ -35,7 +35,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Setup Chrome
-      uses: browser-actions/setup-chrome@v1.0.2
+      uses: browser-actions/setup-chrome@v1
 
     - name: Start web server
       run: |
