@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 # ================= CONFIG =================
-BASE_URL = "http://localhost"
+BASE_URL = "http://localhost/quiz"
 SHOT_DIR = "tests/screenshots"
 os.makedirs(SHOT_DIR, exist_ok=True)
 

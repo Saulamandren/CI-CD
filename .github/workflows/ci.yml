@@ -35,13 +35,17 @@ jobs:
         pip install -r requirements.txt
 
     - name: Setup Chrome
-      uses: browser-actions/setup-chrome@v1
+      uses: browser-actions/setup-chrome@latest
 
     - name: Start web server
       run: |
         sudo cp -r . /var/www/html/quiz
         sudo service apache2 start
         sleep 5
+
+    - name: Debug page
+      run: |
+        curl http://localhost/quiz/login.php
 
     - name: Run tests
       run: |
