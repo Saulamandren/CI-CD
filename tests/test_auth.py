@@ -13,8 +13,10 @@ os.makedirs(SHOT_DIR, exist_ok=True)
 
 def setup_driver():
     options = webdriver.ChromeOptions()
-    options.add_argument("--start-maximized")
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    return webdriver.Chrome(options=options)
 
 
 def shot(driver, name):
